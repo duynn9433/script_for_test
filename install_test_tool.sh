@@ -2,7 +2,7 @@
 
 # Install Java 17
 echo "# Install Java 17"
-./install_java17.sh
+bash install_java17.sh
 echo "# Finish install Java 17"
 
 # Jmeter
@@ -11,7 +11,7 @@ filename="apache-jmeter-5.6.2"
 
 echo "# Install Jmeter"
 echo "Download from GDrive"
-./download_gdrive.sh
+bash download_gdrive.sh
 echo "Unzip to user home"
 unzip -o "$filenamezip" -d ~/
 echo "# Finish install Jmeter"
@@ -28,5 +28,5 @@ echo "# Finish install htop and nload"
 
 # Install Wrk
 echo "# Install Wrk"
-./install_wrk.sh
+bash install_wrk.sh
 echo "# Finish install Wrk"
