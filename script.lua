@@ -1,3 +1,7 @@
+function delay()
+    return 3000
+end
+
 done = function(summary, latency, requests)
    io.write("------------------------------\n")
    print("TotalRequests: " .. summary.requests)
