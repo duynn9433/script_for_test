@@ -38,7 +38,8 @@ done = function(summary, latency, requests)
    local timeout_errors = summary.errors.timeout or 0
 
    local total_errors = connect_errors + read_errors + write_errors + http_status_errors + timeout_errors
-   local error_percentage = (total_errors / total_requests) * 100
+   local total_request_with_err = total_request + connect_errors + read_errors + write_errors + timeout_errors 	
+   local error_percentage = (total_errors / total_request_with_err) * 100
    print("%Error: " .. string.format("%.3f", error_percentage) .. " %")
    
    -- Calculate requests per second
