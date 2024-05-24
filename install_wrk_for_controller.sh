@@ -39,9 +39,10 @@ test_dir="/home/vt_admin/Github/script_for_test"
 if [ ! -d "$test_dir" ]; then
     verbose_echo "Cloning test directory from GitHub..."
     git clone https://github.com/duynn9433/script_for_test.git "$test_dir"
-    sudo chown -R vt_admin:vt_admin "$test_dir"
-    sudo chmod 744 "$test_dir"
 fi
+verbose_echo "Set $test_dir for vt_admin:vt_admin"
+sudo chown -R vt_admin:vt_admin "$test_dir"
+sudo chmod 744 "$test_dir"
 
 # Step 2: Create the wrk directory if it doesn't exist and grant permissions to vt_admin:vt_admin
 wrk_dir="/home/vt_admin/wrk"
