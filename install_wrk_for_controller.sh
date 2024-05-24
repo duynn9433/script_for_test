@@ -34,7 +34,16 @@ while getopts ":vh" option; do
 done
 shift $((OPTIND - 1))
 
-# Step 1: Create the wrk directory if it doesn't exist and grant permissions to vt_admin:vt_admin
+# Step 1: Check if the /home/vt_admin/Github/script_for_test directory exists, if not, clone it from GitHub
+test_dir="/home/vt_admin/Github/script_for_test"
+if [ ! -d "$test_dir" ]; then
+    verbose_echo "Cloning test directory from GitHub..."
+    git clone https://github.com/duynn9433/script_for_test.git "$test_dir"
+    sudo chown -R vt_admin:vt_admin "$test_dir"
+    sudo chmod 744 "$test_dir"
+fi
+
+# Step 2: Create the wrk directory if it doesn't exist and grant permissions to vt_admin:vt_admin
 wrk_dir="/home/vt_admin/wrk"
 if [ ! -d "$wrk_dir" ]; then
     verbose_echo "Creating directory $wrk_dir"
@@ -43,7 +52,7 @@ if [ ! -d "$wrk_dir" ]; then
     sudo chmod 744 "$wrk_dir"
 fi
 
-# Step 2: Check and install wrk if necessary
+# Step 3: Check and install wrk if necessary
 if ! command -v wrk &> /dev/null; then
     verbose_echo "Installing dependencies"
     sudo dnf -y install make automake gcc openssl-devel git
@@ -63,7 +72,7 @@ if ! command -v wrk &> /dev/null; then
     sudo rm -rf wrk
 fi
 
-# Step 3: Set permissions to run wrk for vt_admin:vt_admin
+# Step 4: Set permissions to run wrk for vt_admin:vt_admin
 sudo chown vt_admin:vt_admin /usr/local/bin/wrk
 sudo chmod +x /usr/local/bin/wrk
 
