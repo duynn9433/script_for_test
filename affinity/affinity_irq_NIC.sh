@@ -45,12 +45,18 @@ set_irq_affinity() {
         echo "Error: No CPUs specified for $interface"
         exit 1
     fi
-
-    for i in "${!irq_numbers[@]}"; do
-        local cpu_index=$((i % num_cpus))
-        verbose_echo "Setting IRQ ${irq_numbers[$i]} affinity to CPU ${cpu_array[$cpu_index]}"
-        echo ${cpu_array[$cpu_index]} > /proc/irq/${irq_numbers[$i]}/smp_affinity_list
-    done
+    if [ $num_cpus -ge $num_irqs ]; then
+        for i in "${!irq_numbers[@]}"; do
+            local cpu_index=$((i % num_cpus))
+            verbose_echo "Setting IRQ ${irq_numbers[$i]} affinity to CPU ${cpu_array[$cpu_index]}"
+            echo ${cpu_array[$cpu_index]} > /proc/irq/${irq_numbers[$i]}/smp_affinity_list
+        done
+    else 
+        for i in "${!irq_numbers[@]}"; do
+            verbose_echo "Setting IRQ ${irq_numbers[$i]} affinity to CPU ${cpu_array[@]}"
+            echo ${cpu_array[@]} > /proc/irq/${irq_numbers[$i]}/smp_affinity_list
+        done
+    fi 
 }
 
 # Verify the CPU affinity assignment
