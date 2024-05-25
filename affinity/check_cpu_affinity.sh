@@ -21,7 +21,6 @@ print_affinity() {
     # Loop through each PID and print its affinity
     for pid in $pid_list; do
         echo -e "${GREEN}------------------------------------------------${NC}"
-        echo "PID: $pid"
         taskset -cp $pid
     done
 }
@@ -31,7 +30,6 @@ print_network_affinity() {
     echo -e "${BLUE}================ CPU affinity for network interfaces with IRQ numbers =================${NC}"
     for interface in $(ls /sys/class/net); do
         irqs=$(cat /proc/interrupts | grep "$interface" | awk -F ":" '{print $1}' | tr -d ' ')
-        echo "Interface: $interface - IRQs: $irqs"
         if [ -n "$irqs" ]; then
             echo -e "${GREEN}------------------------------------------------${NC}"
             echo "Interface: $interface"
