@@ -25,7 +25,7 @@ get_irq_numbers() {
 # Define the interfaces and their corresponding CPUs
 declare -A interface_cpu_map
 #interface_cpu_map=( ["eno1np0"]="0,1,2,3,4,5,6,7" ["eno1np1"]="0,1,2,3,4,5,6,7" )
-interface_cpu_map=( ["eno1np0"]="0,1,2,3,4,5,6,7" )
+interface_cpu_map=( ["eno8303"]="40,88" ["eno8403"]="40,88" ["ens1f0np0"]="3,5,7,9,51,53,55,57" ["ens2f0np0"]="3,5,7,9,51,53,55,57" ["ens1f1np1"]="11,13,15,17,59,61,63,65" ["ens2f1np1"]="11,13,15,17,59,61,63,65" )
 
 # Set CPU affinity for IRQs
 set_irq_affinity() {
