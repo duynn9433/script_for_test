@@ -22,6 +22,7 @@ print_affinity() {
     for pid in $pid_list; do
         echo -e "${GREEN}------------------------------------------------${NC}"
         taskset -cp $pid
+        echo Number of thread && ps -o nlwp= -p $pid
     done
 }
 
