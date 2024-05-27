@@ -98,6 +98,14 @@ frontend bpk-forward
 #    log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hr %hs %{+Q}r"
     default_backend bpk
 
+frontend dev-forward
+    bind *:9480
+    capture request header User-Agent len 400
+    capture request header X-Unique-ID len 64
+    log-format "%H %b %f [%tr] %TR/%Tw/%Tc/%Tr/%Ta/%Tt %ci %{+Q}[capture.req.hdr(0)] %ST %B %HM %HU %HV %ac/%fc/%bc/%sc/%rc %{+Q}[capture.req.hdr(1)] \"\" %ts %s"
+#    log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hr %hs %{+Q}r"
+    default_backend dev
+
 backend fluent-bit
     http-request set-path /metrics
     server flb 127.0.0.1:2021 check
@@ -112,6 +120,9 @@ backend ats
     timeout http-keep-alive 60s
     http-reuse aggressive
     server trafficserver 127.0.0.1:8080 check send-proxy
+
+backend dev
+    server dev 117.1.1157.113:9480 check
 
 backend bpk
     balance roundrobin
