@@ -1,0 +1,5 @@
+^/(netcdn-live)(.+\.m3u8)\?(.*)(timeshift=)(.*)$ http://127.0.0.1:88/bpk-tv$2?$3delay=$5
+^/(netcdn-live)(.+\.m3u8)\??(.*)$ http://127.0.0.1:88/bpk-tv$2?$3
+^/(netcdn-live)(.+\.mpd)\?(.*)(timeshift=)(.*)$ http://127.0.0.1:88/bpk-tv$2?$3delay=$5
+^/(netcdn-live)(.+\.mpd)\?(.*)$ http://127.0.0.1:88/bpk-tv$2?$3
+^/(netcdn-live)(.+\.)(aac|ts|dash|m4s|mp4)(\?*.*)$ http://127.0.0.1:88/bpk-tv$2$3$4
