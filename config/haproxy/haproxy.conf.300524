@@ -66,9 +66,15 @@ backend bpk
 
     balance roundrobin
     option allbackups
-    server shield1-kv3 172.24.16.234:80 check
-    server shield2-kv3 172.24.16.235:80 check
-    server shield3-kv3 172.24.16.236:80 check
-    server shield1-kv1 172.24.16.138:80 check backup
-    server shield2-kv1 172.24.16.139:80 check backup
-    server shield3-kv1 172.24.16.140:80 check backup
+    server shield1-kv1 172.24.16.138:80 check 
+    server shield2-kv1 172.24.16.139:80 check 
+    server shield3-kv1 172.24.16.140:80 check
+    #server shield1-kv3 172.24.16.234:80 check
+    #server shield2-kv3 172.24.16.235:80 check
+    #server shield3-kv3 172.24.16.236:80 check
+    server shield1-kv3 172.24.16.234:80 check backup
+    server shield2-kv3 172.24.16.235:80 check backup
+    server shield3-kv3 172.24.16.236:80 check backup
+    #server shield1-kv1 172.24.16.138:80 check backup
+    #server shield2-kv1 172.24.16.139:80 check backup
+    #server shield3-kv1 172.24.16.140:80 check backup
