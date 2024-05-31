@@ -85,6 +85,43 @@ verify_affinity() {
     echo "Affinity check passed for $interface"
 }
 
+# Function to add IRQs to irqbalance ban list
+add_irqs_to_irqbalance_ban() {
+    local irq_numbers=("$@")
+    local irqbalance_config="/etc/default/irqbalance"
+    local banirqs=""
+
+    for irq in "${irq_numbers[@]}"; do
+        banirqs+="$irq,"
+    done
+
+    # Remove trailing comma
+    banirqs=${banirqs%,}
+
+    # Check if the irqbalance config file already has OPTIONS set
+    if grep -q "^OPTIONS=" "$irqbalance_config"; then
+        # Append to existing OPTIONS line
+        sudo sed -i "/^OPTIONS=/ s/\"$/ --banirq=$banirqs\"/" "$irqbalance_config"
+    else
+        # Add a new OPTIONS line
+        echo "OPTIONS=\"--banirq=$banirqs\"" | sudo tee -a "$irqbalance_config" > /dev/null
+    fi
+}
+
+# Function to add banned CPUs to irqbalance configuration
+add_banned_cpus_to_irqbalance() {
+    local banned_cpus="$1"
+    local irqbalance_config="/etc/default/irqbalance"
+
+    if grep -q "^IRQBALANCE_BANNED_CPU_LIST=" "$irqbalance_config"; then
+        # Update existing BANNED_CPUS line
+        sudo sed -i "s/^IRQBALANCE_BANNED_CPU_LIST=.*/IRQBALANCE_BANNED_CPU_LIST=\"$banned_cpus\"/" "$irqbalance_config"
+    else
+        # Add a new BANNED_CPUS line
+        echo "IRQBALANCE_BANNED_CPU_LIST=\"$banned_cpus\"" | sudo tee -a "$irqbalance_config" > /dev/null
+    fi
+}
+
 # Perform CPU affinity assignment and verification for each interface
 for interface in "${!interface_cpu_map[@]}"; do
     cpus=${interface_cpu_map[$interface]}
@@ -94,4 +131,23 @@ for interface in "${!interface_cpu_map[@]}"; do
     verify_affinity $interface $cpus
 done
 
-echo "All interfaces have been successfully configured."
+# Collect all IRQs to be banned
+all_irqs_to_ban=()
+
+# Loop through each interface to get IRQs
+for interface in "${!interface_cpu_map[@]}"; do
+    irqs=($(get_irq_numbers $interface))
+    all_irqs_to_ban+=("${irqs[@]}")
+done
+
+# Add the collected IRQs to irqbalance ban list
+add_irqs_to_irqbalance_ban "${all_irqs_to_ban[@]}"
+
+# Set banned CPUs
+BANNED_CPUS_LIST="1,3,5,7-47,49,51,53,55-95"
+add_banned_cpus_to_irqbalance "$BANNED_CPUS_LIST"
+
+# Restart irqbalance to apply the new configuration
+sudo systemctl restart irqbalance
+
+echo "All interfaces have been successfully configured and IRQs added to irqbalance ban list."
