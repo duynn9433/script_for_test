@@ -24,7 +24,6 @@ get_irq_numbers() {
 
 # Define the interfaces and their corresponding CPUs
 declare -A interface_cpu_map
-#interface_cpu_map=( ["eno1np0"]="0,1,2,3,4,5,6,7" ["eno1np1"]="0,1,2,3,4,5,6,7" )
 interface_cpu_map=( ["ens1f0np0"]="18,20,22,24,66,68,70,72" ["ens2f0np0"]="18,20,22,24,66,68,70,72" ["ens1f1np1"]="26,28,30,32,74,76,78,80" ["ens2f1np1"]="26,28,30,32,74,76,78,80" )
 
 # Set CPU affinity for IRQs
@@ -45,6 +44,7 @@ set_irq_affinity() {
         echo "Error: No CPUs specified for $interface"
         exit 1
     fi
+
     if [ $num_cpus -ge $num_irqs ]; then
         for i in "${!irq_numbers[@]}"; do
             local cpu_index=$((i % num_cpus))
@@ -149,5 +149,9 @@ add_banned_cpus_to_irqbalance "$BANNED_CPUS_LIST"
 
 # Restart irqbalance to apply the new configuration
 sudo systemctl restart irqbalance
+
+# Debug: Print full irqbalance config for verification
+echo "irqbalance configuration:"
+cat /etc/default/irqbalance
 
 echo "All interfaces have been successfully configured and IRQs added to irqbalance ban list."
