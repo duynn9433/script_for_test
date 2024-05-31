@@ -10,7 +10,7 @@ crowdsec_cpu_list="34,36,38,40,82,84,86,88"
 change_affinity() {
     service_name=$1
     cpu_list=$2
-    ./change_service_affinity.sh "$service_name" "$cpu_list"
+    bash change_service_affinity.sh "$service_name" "$cpu_list"
 }
 
 # Set CPU affinities for each service
