@@ -61,7 +61,7 @@ set_banned_cpus_to_irqbalance() {
     fi
 }
 
-# Set IRQ affinity for interfaces
+# Function to set IRQ affinity for interfaces
 set_irq_affinity() {
     local interface=$1
     local cpus=$2
@@ -93,6 +93,34 @@ set_irq_affinity() {
         done
     fi 
 }
+
+# Verify the CPU affinity assignment
+verify_affinity() {
+    local interface=$1
+    local cpus=$2
+    local irq_numbers=($(get_irq_numbers $interface))
+
+    IFS=',' read -r -a cpu_array <<< "$cpus"
+
+    verbose_echo "CPU array for $interface: ${cpu_array[@]}"
+    verbose_echo "IRQ numbers for $interface: ${irq_numbers[@]}"
+
+    local num_cpus=${#cpu_array[@]}
+
+    for i in "${!irq_numbers[@]}"; do
+        local cpu_index=$((i % num_cpus))
+        local assigned_cpu=$(cat /proc/irq/${irq_numbers[$i]}/smp_affinity_list)
+        verbose_echo "IRQ ${irq_numbers[$i]} for $interface is assigned to CPU $assigned_cpu"
+        if [[ $assigned_cpu != ${cpu_array[$cpu_index]} ]]; then
+            echo "Error: IRQ ${irq_numbers[$i]} for $interface is not correctly assigned to CPU ${cpu_array[$cpu_index]}"
+            exit 1
+        fi
+    done
+
+    echo "Affinity check passed for $interface"
+}
+
+
 
 # Set banned CPUs
 BANNED_CPUS_LIST="1,3,5,7-47,49,51,53,55-95"
