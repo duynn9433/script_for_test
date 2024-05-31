@@ -87,24 +87,24 @@ verify_affinity() {
 
 # Function to set IRQs to irqbalance ban list
 set_irqbalance_ban_irqs() {
-    local irq_numbers=("$@")
     local irqbalance_config="/etc/sysconfig/irqbalance"
     local banirqs=""
 
-    for irq in "${irq_numbers[@]}"; do
-        banirqs+="$irq,"
+    for cpus in "${interface_cpu_map[@]}"; do
+        local irq_numbers=($(get_irq_numbers $interface))
+        for irq in "${irq_numbers[@]}"; do
+            banirqs+="--banirq=$irq "
+        done
     done
-
-    # Remove trailing comma
-    banirqs=${banirqs%,}
 
     # Set the IRQBALANCE_ARGS with the new banirq list
     if grep -q "^IRQBALANCE_ARGS=" "$irqbalance_config"; then
-        sudo sed -i "s|^IRQBALANCE_ARGS=.*|IRQBALANCE_ARGS=\"--banirq=$banirqs\"|" "$irqbalance_config"
+        sudo sed -i "s|^IRQBALANCE_ARGS=.*|IRQBALANCE_ARGS=\"$banirqs\"|" "$irqbalance_config"
     else
-        echo "IRQBALANCE_ARGS=\"--banirq=$banirqs\"" | sudo tee -a "$irqbalance_config" > /dev/null
+        echo "IRQBALANCE_ARGS=\"$banirqs\"" | sudo tee -a "$irqbalance_config" > /dev/null
     fi
 }
+
 
 # Function to set banned CPUs to irqbalance configuration
 set_banned_cpus_to_irqbalance() {
