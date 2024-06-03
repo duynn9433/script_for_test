@@ -1,7 +1,7 @@
 #! /bin/bash
 
 echo "# Install dependencies"
-sudo dnf -y install make automake gcc openssl-devel git
+sudo dnf -y install make automake gcc openssl-devel git perl
 
 echo "# Clone the wrk repository"
 git clone https://github.com/wg/wrk.git
