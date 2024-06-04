@@ -1,173 +1,205 @@
-local logFile = io.open("debug.log", "a")
-local resultFile = io.open("result.log", "a")
--- https://es1-p1-netcdn.tv360.vn/netcdn-live/304/output/304-audio_133600_eng=131600-video=6730000.m3u8?timestamp=1817589485&uid=test_12345&token=e543a4f37744f5e4b53f55df86d21a04
-local m3u8Url = "/netcdn-live/304/output/304-audio_133600_eng=131600-video=6730000.m3u8?timestamp=1817589485&uid=test_12345&token=e543a4f37744f5e4b53f55df86d21a04"
-local delay_time_ms = 4000
+#!/bin/bash
 
-function log(message)
-    logFile:write(message .. "\n")
-    logFile:flush()
-end
+output_file="$HOME/wrk/summary_report.wrk"
+wrk_dir="$HOME/wrk/work-node"
+max_attempts=4
+wait_time=10
 
-function result_log(message)
-    resultFile:write(message .. "\n")
-    resultFile:flush()
-end
-
--- log("Script loaded")
-
-function is_valid_url(url)
-    local pattern = "^https?://[%w-_%.%?%.:/%+=&]+$"
-    return url:match(pattern) ~= nil
-end
-
-function get_last_valid_url(body)
-    local lines = {}
-    for line in body:gmatch("[^\r\n]+") do
-        table.insert(lines, line)
-    end
-
-    for i = #lines, 1, -1 do
-        local line = lines[i]
-        if not line:match("^#") and is_valid_url(line) then
-            return line
-        end
-    end
-
-    return nil
-end
-
-function is_m3u8(headers)
-    for key, value in pairs(headers) do
-        if key:lower() == "content-type" and value:lower() == "application/vnd.apple.mpegurl" then
-            return true
-        elseif key:lower() == "content-type" and value:lower() == "application/x-mpegurl" then
-            return true
-        elseif key:lower() == "content-type" and value:lower() == "application/m3u8" then
-            return true
-        end
-    end
-    return false
-end
-
-function delay()
-    return delay_time_ms 
-end
-
-function init(args)
-    currChunkUrl = ""
-    lastChunkUrl = ""
-    r = {}
-end
- 
-function request()
-    -- log("Curr Chunk URL: " .. currChunkUrl)
-    if currChunkUrl < lastChunkUrl then 
-        currChunkUrl = lastChunkUrl
-        -- log("Chunk URL: " .. currChunkUrl)
-    end
-    if currChunkUrl ~= "" then 
-        r[1] = wrk.format(nil, currChunkUrl)
-        r[2] = wrk.format(nil, m3u8Url)
+# Function to check if a file has completed execution
+file_completed() {
+    local file="$1"
+    if grep -q "StartTime" "$file" && grep -q "EndTime" "$file"; then
+        return 0
     else
-        r[1] = wrk.format(nil, m3u8Url)
-    end
-    -- r[1] = wrk.format(nil, m3u8Url)
-    req = table.concat(r)
-    -- log("request table:" .. req)
-    return req
-end
+        return 1
+    fi
+}
 
-response = function(status, headers, body)
-    if status == 200 and is_m3u8(headers) then
-        -- log("Response is an M3U8 file.")
-        -- log("Response received with body: " .. body)
-        local last_valid_url = get_last_valid_url(body)
-        if last_valid_url then
-            -- log("Last valid URL: " .. last_valid_url)
-            lastChunkUrl = last_valid_url
-        else
-            -- log("No valid URL found")
-        end
-    elseif status ~= 200 then
-        log(status)
-    else
-        -- log("Response is not an M3U8 file. Skipping body check.")
-    end
-end
+# Initialize variables to accumulate totals
+title=""
+total_thread=0
+total_connection=0
 
-done = function(summary, latency, requests)
-    local total_request = summary.requests
-    io.write("------------------------------\n")
-    print("TotalRequests: " .. total_request)
-    -- time in second
-    local time = summary.duration / 1000000 
-    print("TotalTime: " .. string.format("%.3f", time) .. " s")
-    
-    -- Printing the total transfer in gigabits (Gb)
-    local total_transfer_gb = summary.bytes * 8 / (1024^3)
-    print("TotalTransfer: " .. string.format("%.3f", total_transfer_gb) .. " Gb")
-    
-    -- Printing the average (mean) latency in milliseconds
-    local avg_latency = latency.mean / 1000
-    print("Average: " .. string.format("%.3f", avg_latency) .. " ms")
-    
-    -- Printing the maximum latency in milliseconds
-    local max_latency = latency.max / 1000
-    print("Maximum: " .. string.format("%.3f", max_latency) .. " ms")
-      
-    -- Printing the standard deviation of latency in milliseconds
-    local std_dev_latency = latency.stdev / 1000
-    print("StandardDeviation: " .. string.format("%.3f", std_dev_latency) .. " ms")
-    
-    print("Latency Distribution:")
-    local l50 = latency:percentile(50) and latency:percentile(50) / 1000 or 0
-    local l90 = latency:percentile(90) and latency:percentile(90) / 1000 or 0
-    local l95 = latency:percentile(95) and latency:percentile(95) / 1000 or 0
-    local l97 = latency:percentile(97) and latency:percentile(97) / 1000 or 0
-    local l99 = latency:percentile(99) and latency:percentile(99) / 1000 or 0
-    local l9999 = latency:percentile(99.99) and latency:percentile(99.99) / 1000 or 0
-    for _, p in pairs({ 50, 90, 95, 97, 99, 99.99 }) do
-       local n = latency:percentile(p) / 1000  -- Convert from microseconds to milliseconds
-       local msg = "%g%%    %.3f ms"
-       print(msg:format(p, n))
-    end
-    
-    -- Calculate the percentage of all types of errors
-    local connect_errors = summary.errors.connect or 0
-    print("ErrorConnect: " .. connect_errors)
-    local read_errors = summary.errors.read or 0
-    print("ErrorRead: " .. read_errors)
-    local write_errors = summary.errors.write or 0
-    print("ErrorWrite: " .. write_errors)
-    local http_status_errors = summary.errors.status or 0
-    print("ErrorStatus: " .. http_status_errors)
-    local timeout_errors = summary.errors.timeout or 0
-    print("ErrorTimeout: " .. timeout_errors)
- 
-    local total_errors = connect_errors + read_errors + write_errors + http_status_errors + timeout_errors
-    local total_request_with_err = total_request + connect_errors + read_errors + write_errors + timeout_errors 	
-    local error_percentage = (total_errors / total_request_with_err) * 100
-    print("%Error: " .. string.format("%.3f", error_percentage) .. " %")
-    
-    -- Calculate requests per second
-    local duration_seconds = summary.duration / 1000000 -- converting microseconds to seconds
-    local rps = total_request / duration_seconds
-    print("RequestsPerSecond: " .. string.format("%.3f", rps))
- 
-    -- Calculate transfer per second
-    local total_bytes = summary.bytes
-    local tps = total_bytes / duration_seconds
-    print("TransferPerSecondRaw: " .. string.format("%.3f", tps) .. " bytes")
-    
-    -- Calculate transfer per second in GB/s
-    local tps_gb = total_bytes * 8 / (duration_seconds * 1024 * 1024 * 1024) -- converting bytes to gigabytes
-    print("TransferPerSecond: " .. string.format("%.3f", tps_gb) .. " Gb/s")
+total_requests=0
+total_transfer=0
+total_latency=0
+total_latency_sd_numerator=0
+total_latency_sd_denominator=0
+total_requests_per_second=0
+total_transfer_per_second_raw=0
+total_transfer_per_second=0
 
-    --print to csv 
-    result_log("TotalRequests,TotalTime,TotalTransfer,Average,Maximum,StandardDeviation,P50,P90,P95,P97,P99,P99.99,ErrorConnect,ErrorRead,ErrorWrite,ErrorStatus,ErrorTimeout,ErrorPercentage,RequestsPerSecond,TransferPerSecond,TransferPerSecondRAW,")
-    result_log(string.format("%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%d,%d,%d,%d,%.3f,%.3f,%.3f,%.3f,\n",
-    total_request, time, total_transfer_gb, avg_latency, max_latency, std_dev_latency,
-    l50, l90, l95, l97, l99, l9999,
-    connect_errors, read_errors, write_errors, http_status_errors, timeout_errors, error_percentage, rps, tps_gb, tps))
- end
+p50_latency=0
+p90_latency=0
+p95_latency=0
+p97_latency=0
+p99_latency=0
+p9999_latency=0
+
+total_connect_errors=0
+total_read_errors=0
+total_write_errors=0
+total_timeout_errors=0
+total_status_errors=0
+
+start_time=""
+end_time=""
+max_time=0
+max_latency=0
+
+# Remove the output file if it exists
+rm -f "$output_file"
+count_file=0
+# Iterate over all .wrk files and extract relevant data
+for file in "$wrk_dir"/3_10_116.103.200.213_*.wrk; do
+    echo "Processing $file..."
+    # Check if count_file is less than 1
+    if [ "$count_file" -lt 1 ]; then
+        # Search for "Running" in file
+        title=$(grep "Running" "$file")
+    fi
+
+    # Increment count_file
+    count_file=$((count_file + 1))
+    ###########################    Wait for completion   ################################################
+    # Wait for completion if the file hasn't finished executing
+    attempts=0
+    while ! file_completed "$file"; do
+        attempts=$((attempts + 1))
+        if [ "$attempts" -gt "$max_attempts" ]; then
+            echo "File $file did not complete execution after $max_attempts attempts. Skipping."
+            continue 2
+        fi
+        echo "File $file is not yet complete. Waiting for $wait_time seconds (Attempt $attempts/$max_attempts)..."
+        sleep "$((wait_time * attempts))"
+    done
+    ###########################    Read File  #######################################################
+    # Extract values from the current file
+    thread=$(grep "threads" "$file" | awk '{print $1}')
+    connection=$(grep "connections" "$file" | awk '{print $4}')
+
+    requests=$((grep "TotalRequests:" "$file" || echo "0 0") | awk '{print $2}')
+    time=$((grep "TotalTime:" "$file" || echo "0 0") | awk '{print $2}')
+    transfer=$((grep "TotalTransfer:" "$file" || echo "0 0") | awk '{print $2}')
+    latency=$((grep "Average:" "$file" || echo "0 0") | awk '{print $2}')
+    maximum=$((grep "Maximum:" "$file" || echo "0 0") | awk '{print $2}')
+    latency_sd=$((grep "StandardDeviation:" "$file" || echo "0 0" )| awk '{print $2}')
+    requests_per_second=$((grep "RequestsPerSecond:" "$file" || echo "0 0") | awk '{print $2}')
+    transfer_per_second_raw=$((grep "TransferPerSecondRaw:" "$file" || echo "0 0") | awk '{print $2}')
+    transfer_per_second=$((grep "TransferPerSecond:" "$file" || echo "0 0") | awk '{print $2}')
+
+    p50=$((grep "^50%\s\+[0-9.]\+ ms$" "$file" || echo "0 0") | awk '{print $2}')
+    p90=$((grep "^90%\s\+[0-9.]\+ ms$" "$file" || echo "0 0") | awk '{print $2}')
+    p95=$((grep "^95%\s\+[0-9.]\+ ms$" "$file" || echo "0 0") | awk '{print $2}')
+    p97=$((grep "^97%\s\+[0-9.]\+ ms$" "$file" || echo "0 0") | awk '{print $2}')
+    p99=$((grep "^99%\s\+[0-9.]\+ ms$" "$file" || echo "0 0") | awk '{print $2}')
+    p9999=$((grep "^99.99%\s\+[0-9.]\+ ms$" "$file" || echo "0 0") | awk '{print $2}')
+
+    connect_errors=$((grep "ErrorConnect:" "$file" || echo "0 0") | awk '{print $2}')
+    read_errors=$((grep "ErrorRead:" "$file" || echo "0 0") | awk '{print $2}')
+    write_errors=$((grep "ErrorWrite:" "$file" || echo "0 0") | awk '{print $2}')
+    timeout_errors=$((grep "ErrorTimeout:" "$file" || echo "0 0") | awk '{print $2}')
+    status_errors=$((grep "ErrorStatus:" "$file" || echo "0 0") | awk '{print $2}')
+    
+    file_start_time=$((grep "StartTime" "$file" || echo "0 0") | head -n 1 | awk '{print $2}')
+    file_end_time=$((grep "EndTime" "$file" || echo "0 0") | head -n 1 | awk '{print $2}')
+
+    ##########################   Update data   ########################################################
+    # Update start_time and end_time
+    if [ -z "$start_time" ] || [[ "$file_start_time" < "$start_time" ]]; then
+        start_time=$file_start_time
+    fi
+    if [ -z "$end_time" ] || [[ "$file_end_time" > "$end_time" ]]; then
+        end_time=$file_end_time
+    fi
+
+    # Calculate weights
+    echo "Calculate weights"
+    weighted_latency=$(echo "$requests * $latency" | bc)
+    weighted_latency_sd=$(echo "($requests - 1) * $latency_sd^2" | bc)
+
+    # Accumulate totals
+    echo "Accumulate totals"
+    total_thread=$(echo "$total_thread + $thread" | bc)
+    total_connection=$(echo "$total_connection + $connection" | bc)
+    total_requests=$(echo "$total_requests + $requests" | bc)
+    max_time=$(echo "if($max_time > $time) $max_time else $time" | bc)
+    total_transfer=$(echo "$total_transfer + $transfer" | bc)
+    total_latency=$(echo "$total_latency + $weighted_latency" | bc)
+    max_latency=$(echo "if($max_latency > $maximum) $max_latency else $maximum" | bc)
+    # Std Dev
+    total_latency_sd_numerator=$(echo "$total_latency_sd_numerator + $weighted_latency_sd" | bc)
+    total_latency_sd_denominator=$(echo "$total_latency_sd_denominator + ($requests - 1)" | bc)
+
+    p50_latency=$(echo "$p50_latency + $requests * $p50" | bc)
+    p90_latency=$(echo "$p90_latency + $requests * $p90" | bc)
+    p95_latency=$(echo "$p95_latency + $requests * $p95" | bc)
+    p97_latency=$(echo "$p97_latency + $requests * $p97" | bc)
+    p99_latency=$(echo "$p99_latency + $requests * $p99" | bc)
+    p9999_latency=$(echo "$p9999_latency + $requests * $p9999" | bc)
+    total_connect_errors=$(echo "$total_connect_errors + $connect_errors" | bc)
+    total_read_errors=$(echo "$total_read_errors + $read_errors" | bc)
+    total_write_errors=$(echo "$total_write_errors + $write_errors" | bc)
+    total_timeout_errors=$(echo "$total_timeout_errors + $timeout_errors" | bc)
+    total_status_errors=$(echo "$total_status_errors + $status_errors" | bc)
+
+    total_requests_per_second=$(echo "$total_requests_per_second + $requests_per_second" | bc)
+    total_transfer_per_second_raw=$(echo "$total_transfer_per_second_raw + $transfer_per_second_raw" | bc)
+    total_transfer_per_second=$(echo "$total_transfer_per_second + $transfer_per_second" | bc)
+
+
+    # Update maximum time and latency
+    echo "Update maximum time and latency"
+    
+    
+done
+
+# Calculate averages
+average_latency=$(echo "scale=4; $total_latency / $total_requests" | bc -l)
+
+p50_latency=$(echo "scale=4; $p50_latency / $total_requests" | bc -l)
+p90_latency=$(echo "scale=4; $p90_latency / $total_requests" | bc -l)
+p95_latency=$(echo "scale=4; $p95_latency / $total_requests" | bc -l)
+p97_latency=$(echo "scale=4; $p97_latency / $total_requests" | bc -l)
+p99_latency=$(echo "scale=4; $p99_latency / $total_requests" | bc -l)
+p9999_latency=$(echo "scale=4; $p9999_latency / $total_requests" | bc -l)
+
+# Calculate pooled standard deviation
+pooled_sd=$(echo "scale=4; sqrt($total_latency_sd_numerator / $total_latency_sd_denominator)" | bc -l)
+
+# Calculate %err
+total_err=$(echo "$total_connect_errors + $total_read_errors + $total_write_errors + $total_timeout_errors + $total_status_errors" | bc -l)
+err_percent=$(echo "scale=4; $total_err / ($total_requests + $total_err - $total_status_errors) * 100" | bc -l)
+
+# Write results to output file
+cat << EOF > "$output_file"
+$title
+$total_thread threads and $total_connection connections
+TotalFiles: $count_file
+StartTime: $start_time
+EndTime: $end_time
+TotalRequests: $total_requests
+TotalTime: $max_time s
+TotalTransfer: $total_transfer Gb
+AverageLatency: $average_latency ms
+AverageLatencyStandardDeviation: $pooled_sd ms
+RequestsPerSecond: $total_requests_per_second
+TransferPerSecondRaw: $total_transfer_per_second_raw bytes
+TransferPerSecond: $total_transfer_per_second Gb/s
+MaximumLatency: $max_latency ms
+Latency Distribution:
+  50%: $p50_latency ms
+  90%: $p90_latency ms
+  95%: $p95_latency ms
+  97%: $p97_latency ms
+  99%: $p99_latency ms
+  99.99%: $p9999_latency ms
+ErrorConnect: $total_connect_errors
+ErrorRead: $total_read_errors
+ErrorWrite: $total_write_errors
+ErrorTimeout: $total_timeout_errors
+ErrorStatus: $total_status_errors
+%Error: $err_percent%
+EOF
+
+echo "Summary report created at $output_file"
