@@ -165,6 +165,8 @@ done = function(summary, latency, requests)
     print("TransferPerSecond: " .. string.format("%.3f", tps_gb) .. " Gb/s")
 
     --print to csv 
+    local currentTime = os.date("%Y-%m-%d %H:%M:%S")
+    result_log(currentTime)
     result_log("TotalRequests,TotalTime,TotalTransfer,Average,Maximum,StandardDeviation,P50,P90,P95,P97,P99,P9999,ErrorConnect,ErrorRead,ErrorWrite,ErrorStatus,ErrorTimeout,ErrorPercentage,RequestsPerSecond,TransferPerSecond,TransferPerSecondRAW,")
     result_log(string.format("%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%d,%d,%d,%d,%.3f,%.3f,%.3f,%.3f,\n",
     total_request, time, total_transfer_gb, avg_latency, max_latency, std_dev_latency,
