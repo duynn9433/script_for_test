@@ -1,5 +1,21 @@
 #!/bin/bash
+#################################################   Call   #####################################
 
+echo StartTime: "$(date +'%Y-%m-%dT%H:%M:%S')"
+for i in $(seq 1 10); do
+    (
+    sleep $((1 * i))
+    echo StartTime"$i": "$(date +'%Y-%m-%dT%H:%M:%S')" > /home/vtn-duynn22/wrk/work-node/res_"$i".wrk
+    wrk -t 1 -c 1 -d $((1 * (10 - i) + 300))s --timeout 6s "https://es1-p1-netcdn.tv360.vn/netcdn-live/304/output/304-audio_133600_eng=131600-video=6730000.m3u8?timestamp=1817589485&uid=test_12345&token=e543a4f37744f5e4b53f55df86d21a04"  -s /home/vtn-duynn22/Github/wrk/test_scripts/scripts2.lua >> /home/vtn-duynn22/wrk/work-node/res_"$i".wrk
+    echo EndTime: "$(date +'%Y-%m-%dT%H:%M:%S')" >> /home/vtn-duynn22/wrk/work-node/res_"$i".wrk
+    ) &
+done
+wait
+
+echo EndTime: "$(date +'%Y-%m-%dT%H:%M:%S')"
+
+
+#################################################   Merge   ####################################
 output_file="$HOME/wrk/summary_report.wrk"
 wrk_dir="$HOME/wrk/work-node"
 max_attempts=4
@@ -51,7 +67,7 @@ max_latency=0
 rm -f "$output_file"
 count_file=0
 # Iterate over all .wrk files and extract relevant data
-for file in "$wrk_dir"/3_10_116.103.200.213_*.wrk; do
+for file in "$wrk_dir"/res_*.wrk; do
     echo "Processing $file..."
     # Check if count_file is less than 1
     if [ "$count_file" -lt 1 ]; then
@@ -155,21 +171,21 @@ for file in "$wrk_dir"/3_10_116.103.200.213_*.wrk; do
 done
 
 # Calculate averages
-average_latency=$(echo "scale=4; $total_latency / $total_requests" | bc -l)
+average_latency=$(echo "scale=3; $total_latency / $total_requests" | bc -l)
 
-p50_latency=$(echo "scale=4; $p50_latency / $total_requests" | bc -l)
-p90_latency=$(echo "scale=4; $p90_latency / $total_requests" | bc -l)
-p95_latency=$(echo "scale=4; $p95_latency / $total_requests" | bc -l)
-p97_latency=$(echo "scale=4; $p97_latency / $total_requests" | bc -l)
-p99_latency=$(echo "scale=4; $p99_latency / $total_requests" | bc -l)
-p9999_latency=$(echo "scale=4; $p9999_latency / $total_requests" | bc -l)
+p50_latency=$(echo "scale=3; $p50_latency / $total_requests" | bc -l)
+p90_latency=$(echo "scale=3; $p90_latency / $total_requests" | bc -l)
+p95_latency=$(echo "scale=3; $p95_latency / $total_requests" | bc -l)
+p97_latency=$(echo "scale=3; $p97_latency / $total_requests" | bc -l)
+p99_latency=$(echo "scale=3; $p99_latency / $total_requests" | bc -l)
+p9999_latency=$(echo "scale=3; $p9999_latency / $total_requests" | bc -l)
 
 # Calculate pooled standard deviation
-pooled_sd=$(echo "scale=4; sqrt($total_latency_sd_numerator / $total_latency_sd_denominator)" | bc -l)
+pooled_sd=$(echo "scale=3; sqrt($total_latency_sd_numerator / $total_latency_sd_denominator)" | bc -l)
 
 # Calculate %err
 total_err=$(echo "$total_connect_errors + $total_read_errors + $total_write_errors + $total_timeout_errors + $total_status_errors" | bc -l)
-err_percent=$(echo "scale=4; $total_err / ($total_requests + $total_err - $total_status_errors) * 100" | bc -l)
+err_percent=$(echo "scale=3; ($total_err / ($total_requests + $total_err - $total_status_errors)) * 100" | bc -l)
 
 # Write results to output file
 cat << EOF > "$output_file"
@@ -199,7 +215,7 @@ ErrorRead: $total_read_errors
 ErrorWrite: $total_write_errors
 ErrorTimeout: $total_timeout_errors
 ErrorStatus: $total_status_errors
-%Error: $err_percent%
+%Error: $err_percent %
 EOF
 
 echo "Summary report created at $output_file"
