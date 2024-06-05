@@ -1,7 +1,7 @@
 local logFile = io.open("debug.log", "a")
 local resultFile = io.open("result.log", "a")
 -- https://es1-p1-netcdn.tv360.vn/netcdn-live/304/output/304-audio_133600_eng=131600-video=6730000.m3u8?timestamp=1817589485&uid=test_12345&token=e543a4f37744f5e4b53f55df86d21a04
-local m3u8Url = "/netcdn-live/304/output/304-audio_133600_eng=131600-video=6730000.m3u8?timestamp=1817589485&uid=test_12345&token=e543a4f37744f5e4b53f55df86d21a04"
+local m3u8Url = "/netcdn-live/192/output/192-audio_142800_eng=140800-video=5154400.m3u8"
 local delay_time_ms = 4000
 
 function log(message)
