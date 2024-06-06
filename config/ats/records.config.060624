@@ -4,7 +4,7 @@ CONFIG proxy.config.cache.max_doc_size INT 0
 CONFIG proxy.config.cache.min_average_object_size INT 8000
 CONFIG proxy.config.cache.ram_cache.size INT -1
 CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
-CONFIG proxy.config.cache.threads_per_disk INT 12
+CONFIG proxy.config.cache.threads_per_disk INT 15
 CONFIG proxy.config.diags.debug.enabled INT 0
 CONFIG proxy.config.diags.debug.tags STRING http|dns|remap
 CONFIG proxy.config.dump_mem_info_frequency INT 0
