@@ -54,11 +54,11 @@ CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 CONFIG proxy.config.log.auto_delete_rolled_files INT 1
 CONFIG proxy.config.log.logging_enabled INT 3
 CONFIG proxy.config.log.max_space_mb_for_logs INT 30000
-CONFIG proxy.config.log.max_space_mb_headroom INT 10000
+CONFIG proxy.config.log.max_space_mb_headroom INT 1000
 CONFIG proxy.config.log.periodic_tasks_interval INT 5
 CONFIG proxy.config.log.rolling_enabled INT 4
 CONFIG proxy.config.log.rolling_interval_sec INT 1800
-CONFIG proxy.config.log.rolling_size_mb INT 30000
+CONFIG proxy.config.log.rolling_size_mb INT 10000
 CONFIG proxy.config.net.connections_throttle INT 70000
 CONFIG proxy.config.net.default_inactivity_timeout INT 86400
 CONFIG proxy.config.net.max_connections_in INT 70000
@@ -96,7 +96,7 @@ CONFIG proxy.config.http.background_fill_active_timeout INT 0
 CONFIG proxy.config.http.background_fill_completed_threshold INT 0
 
 
-CONFIG proxy.config.http.server_max_connections INT 20
-CONFIG proxy.config.http.per_server.connection.queue_size INT -1
-CONFIG proxy.config.http.per_server.connection.min INT 2
+#CONFIG proxy.config.http.server_max_connections INT 20
+#CONFIG proxy.config.http.per_server.connection.queue_size INT -1
+#CONFIG proxy.config.http.per_server.connection.min INT 2
 #CONFIG proxy.config.allocator.thread_freelist_size INT 0
