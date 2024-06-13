@@ -31,7 +31,7 @@ set_irqbalance_ban_irqs() {
     local irqbalance_config="/etc/sysconfig/irqbalance"
     local banirqs=""
 
-    for key in "${interface_cpu_map[@]}"; do
+    for key in "${!interface_cpu_map[@]}"; do
         local irq_numbers=($(get_irq_numbers $key))
         for irq in "${irq_numbers[@]}"; do
             banirqs+="--banirq=$irq "
