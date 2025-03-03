@@ -38,16 +38,33 @@ check_proxy_for_interface() {
 
 # Function to connect to a network using nmcli
 connect_network() {
-    echo "Connecting to network: $1..."
-    nmcli device connect "$1"
+    type=$(nmcli -t -f DEVICE,TYPE device | grep "^$1:" | cut -d: -f2)
+    
+    if [[ "$type" == "wifi" ]]; then
+        echo "Reconnecting WiFi ($1) using saved profile..."
+        nmcli connection up "$1"
+    else
+        echo "Connecting to wired network ($1)..."
+        nmcli device connect "$1"
+    fi
+    
     check_proxy_for_interface "$1"
 }
 
+
 # Function to disconnect a network using nmcli
 disconnect_network() {
-    echo "Disconnecting network: $1..."
-    nmcli device disconnect "$1"
+    type=$(nmcli -t -f DEVICE,TYPE device | grep "^$1:" | cut -d: -f2)
+    
+    if [[ "$type" == "wifi" ]]; then
+        echo "Disconnecting WiFi ($1) using NetworkManager profile..."
+        nmcli connection down "$1"
+    else
+        echo "Disconnecting wired network ($1)..."
+        nmcli device disconnect "$1"
+    fi
 }
+
 
 # Handle command-line options
 if [[ "$1" == "--status" ]]; then
